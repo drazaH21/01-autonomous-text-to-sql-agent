@@ -5,6 +5,7 @@ A production-grade, self-correcting Agentic Text-to-SQL system that converts nat
 ---
 
 ### 📐 Architecture & Self-Correction Flow
+
 ```mermaid
 graph TD
     User["User Natural Language Query"] --> Router["Groq openai/gpt-oss-20b (Intent & Schema Matcher)"]
@@ -26,7 +27,22 @@ graph TD
 
 ---
 
+### ⚠️ Architectural Limitations & When NOT to Use Text-to-SQL
+
+While autonomous Text-to-SQL agents provide immense value for ad-hoc business analytics, production engineers must design around inherent LLM constraints:
+
+1. **Handling Out-of-Bounds & Cross-Domain Questions:**
+   - **The Risk:** If a user asks a question entirely outside the schema (e.g., *"What is our employee retention rate?"* when only sales data exists), unconstrained LLMs may attempt to hallucinate joins or fabricate columns.
+   - **Mitigation:** Our agent relies on strict schema metadata boundaries and DuckDB execution feedback loops. If columns do not exist, the execution engine catches the failure, allowing the agentic loop to recognize the missing context rather than returning fabricated numbers.
+
+2. **Deterministic dbt vs. Agentic LLMs:**
+   - **Where to Use dbt / SQLMesh:** Core data pipelines, P&L calculations, official financial reporting, and dimensional modeling must **always** remain deterministic, version-controlled, and tested via dbt. Never use an LLM to generate production ETL logic.
+   - **Where to Use the Agent:** Ad-hoc, long-tail data exploration for non-technical stakeholders (e.g., product or sales leads) who need quick answers from clean, pre-modeled staging tables without writing tickets for the data engineering team.
+
+---
+
 ### 📊 Example Test Output
+
 ```text
 ==============================
 Test Question: What is the total revenue generated in the North region?
